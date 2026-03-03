@@ -27,7 +27,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 BACKUP_DIR="/var/lib/dhclient-patch-backup"
-BUILD_DIR="/tmp/dhclient-e3372h-patch"
+BUILD_DIR="$HOME/dhclient-e3372h-patch"
 
 log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
@@ -99,6 +99,7 @@ if [ -z "$SRC_DIR" ]; then
     exit 1
 fi
 cd "$SRC_DIR"
+chmod +x debian/rules
 log_info "Source downloaded: $SRC_DIR"
 
 # Step 3: Apply patch
@@ -149,9 +150,8 @@ log_info "Patches applied successfully ($PATCHED_COUNT xid bypasses, $XID_SYNC x
 
 # Step 4: Build
 log_info "Step 4/5: Building patched dhclient (this may take a few minutes)..."
-dpkg-buildpackage -b -uc -us >/dev/null 2>&1
-if [ $? -ne 0 ]; then
-    log_error "Build failed. Check $BUILD_DIR for details."
+if ! dpkg-buildpackage -b -uc -us 2>&1 | tee /tmp/dhclient-build.log | tail -5; then
+    log_error "Build failed. See /tmp/dhclient-build.log for details."
     exit 1
 fi
 log_info "Build complete."
